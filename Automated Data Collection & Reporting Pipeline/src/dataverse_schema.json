@@ -1,0 +1,63 @@
+{
+  "description": "Dataverse schema for Automated Data Collection & Reporting Pipeline",
+  "environment": "Power Platform / Microsoft Dataverse",
+  "tables": [
+    {
+      "logical_name": "cr_submissions",
+      "display_name": "Submissions",
+      "description": "Central fact table capturing all user-submitted business data",
+      "columns": [
+        { "name": "cr_submission_id",   "type": "UniqueIdentifier", "primary_key": true },
+        { "name": "cr_submission_date", "type": "DateAndTime",      "required": true },
+        { "name": "cr_department_id",   "type": "Lookup",           "target": "cr_departments", "required": true },
+        { "name": "cr_product_id",      "type": "Lookup",           "target": "cr_products",    "required": true },
+        { "name": "cr_quantity",        "type": "WholeNumber",      "required": true, "min": 1 },
+        { "name": "cr_status",          "type": "OptionSet",        "options": ["Pending","Approved","Rejected","Under Review"] },
+        { "name": "cr_submitted_by",    "type": "Lookup",           "target": "systemuser" },
+        { "name": "cr_approved_by",     "type": "Lookup",           "target": "systemuser" },
+        { "name": "cr_approved_date",   "type": "DateAndTime" },
+        { "name": "cr_notes",           "type": "MultiLineText",    "max_length": 2000 }
+      ]
+    },
+    {
+      "logical_name": "cr_departments",
+      "display_name": "Departments",
+      "columns": [
+        { "name": "cr_department_id",   "type": "UniqueIdentifier", "primary_key": true },
+        { "name": "cr_dept_name",       "type": "SingleLineText",   "required": true },
+        { "name": "cr_dept_code",       "type": "SingleLineText",   "max_length": 10 },
+        { "name": "cr_manager_id",      "type": "Lookup",           "target": "systemuser" },
+        { "name": "cr_budget_code",     "type": "SingleLineText" }
+      ]
+    },
+    {
+      "logical_name": "cr_products",
+      "display_name": "Products",
+      "columns": [
+        { "name": "cr_product_id",      "type": "UniqueIdentifier", "primary_key": true },
+        { "name": "cr_product_name",    "type": "SingleLineText",   "required": true },
+        { "name": "cr_category",        "type": "SingleLineText" },
+        { "name": "cr_unit_price",      "type": "Currency",         "min": 0 },
+        { "name": "cr_is_active",       "type": "TwoOptions",       "default": true }
+      ]
+    },
+    {
+      "logical_name": "cr_audit_log",
+      "display_name": "Audit Log",
+      "description": "Immutable record of all flow actions and data quality results",
+      "columns": [
+        { "name": "cr_log_id",          "type": "UniqueIdentifier", "primary_key": true },
+        { "name": "cr_log_timestamp",   "type": "DateAndTime",      "required": true },
+        { "name": "cr_submission_id",   "type": "Lookup",           "target": "cr_submissions" },
+        { "name": "cr_action",          "type": "SingleLineText",   "description": "e.g. Created, Approved, Rejected, QualityFlag" },
+        { "name": "cr_triggered_by",    "type": "SingleLineText",   "description": "Flow name or user" },
+        { "name": "cr_notes",           "type": "MultiLineText" }
+      ]
+    }
+  ],
+  "relationships": [
+    { "from": "cr_submissions.cr_department_id", "to": "cr_departments.cr_department_id", "type": "ManyToOne" },
+    { "from": "cr_submissions.cr_product_id",    "to": "cr_products.cr_product_id",       "type": "ManyToOne" },
+    { "from": "cr_audit_log.cr_submission_id",   "to": "cr_submissions.cr_submission_id", "type": "ManyToOne" }
+  ]
+}

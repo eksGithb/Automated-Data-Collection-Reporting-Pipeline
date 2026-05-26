@@ -1,0 +1,94 @@
+# DAX Measures — Power BI Operational Dashboard
+
+## Summary KPIs
+
+```dax
+-- Total Submissions (all time)
+Total Submissions = COUNTROWS(Submissions)
+
+-- Submissions This Month
+Submissions This Month =
+CALCULATE(
+    COUNTROWS(Submissions),
+    DATESMTD(Submissions[submission_date])
+)
+
+-- Approval Rate
+Approval Rate =
+DIVIDE(
+    CALCULATE(COUNTROWS(Submissions), Submissions[status] = "Approved"),
+    COUNTROWS(Submissions),
+    0
+)
+
+-- Average Days to Approval
+Avg Days to Approval =
+AVERAGEX(
+    FILTER(Submissions, Submissions[status] = "Approved"),
+    DATEDIFF(Submissions[submission_date], Submissions[approved_date], DAY)
+)
+
+-- % Complete (no nulls in required fields)
+Data Completeness % =
+DIVIDE(
+    CALCULATE(
+        COUNTROWS(Submissions),
+        NOT ISBLANK(Submissions[department_id]),
+        NOT ISBLANK(Submissions[product_id]),
+        NOT ISBLANK(Submissions[quantity])
+    ),
+    COUNTROWS(Submissions),
+    0
+)
+```
+
+## Trend Analysis
+
+```dax
+-- Month-over-Month Submission Growth
+MoM Growth % =
+VAR CurrentMonth = [Submissions This Month]
+VAR PriorMonth =
+    CALCULATE(
+        COUNTROWS(Submissions),
+        DATEADD(Submissions[submission_date], -1, MONTH)
+    )
+RETURN
+DIVIDE(CurrentMonth - PriorMonth, PriorMonth, 0)
+
+-- Rolling 30-Day Submissions
+Rolling 30D Submissions =
+CALCULATE(
+    COUNTROWS(Submissions),
+    DATESINPERIOD(Submissions[submission_date], LASTDATE(Submissions[submission_date]), -30, DAY)
+)
+
+-- Pending Submissions (SLA breach risk: > 3 days)
+Pending Over 3 Days =
+CALCULATE(
+    COUNTROWS(Submissions),
+    Submissions[status] = "Pending",
+    DATEDIFF(Submissions[submission_date], TODAY(), DAY) > 3
+)
+```
+
+## Department Breakdown
+
+```dax
+-- Revenue by Department (if financial data linked)
+Dept Revenue =
+SUMX(
+    RELATEDTABLE(Submissions),
+    Submissions[quantity] * RELATED(Products[unit_price])
+)
+
+-- Submissions Rank by Department
+Dept Submission Rank =
+RANKX(
+    ALL(Departments[dept_name]),
+    CALCULATE(COUNTROWS(Submissions)),
+    ,
+    DESC,
+    DENSE
+)
+```
