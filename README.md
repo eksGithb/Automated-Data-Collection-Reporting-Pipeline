@@ -1,7 +1,6 @@
-# Project 3 — Automated Data Collection & Reporting Pipeline (Power Platform)
+# Automated Data Collection & Reporting Pipeline (Power Platform)
 
 **Tools:** Power Automate · Power Apps · Microsoft Dataverse · Power BI  
-**Timeline:** January 2025
 
 ---
 
